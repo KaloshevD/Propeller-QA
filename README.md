@@ -70,4 +70,4 @@ I believe that should be it, some test fail others pass, you should be good.
 A GitHub Actions workflow is included in .github/workflows/main.yml.
 It runs the tests automatically:
 
-On every push or pull request to master
+On every push or pull request to master, currently fails :*(
