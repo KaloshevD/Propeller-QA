@@ -44,7 +44,5 @@ jobs:
           cat package.json | grep -A 10 '"jest"'
       
       - name: Run tests
-        run: npm run test:ci
+        run: npx jest
 
-      - name: Run tests again
-        run: npm test
