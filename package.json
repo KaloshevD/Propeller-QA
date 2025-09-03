@@ -1,0 +1,44 @@
+{
+  "name": "propeller-graphql-testing",
+  "version": "1.0.0",
+  "description": "Automated testing suite for GraphQL API - Users and Albums",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false"
+  },
+  "keywords": [
+    "graphql",
+    "testing",
+    "jest",
+    "api"
+  ],
+  "author": "Propeller QA Team",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "graphql-request": "^6.1.0",
+    "@types/jest": "^29.5.8",
+    "@types/supertest": "^2.0.16"
+  },
+  "dependencies": {
+    "axios": "^1.6.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "tests/**/*.js",
+      "!tests/setup.js"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testTimeout": 30000,
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"]
+  }
+}

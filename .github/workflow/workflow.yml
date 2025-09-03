@@ -1,0 +1,144 @@
+name: GraphQL API Tests
+
+#Triggers:
+#Runs on pushes to main & develop.
+#Runs on PRs into main.
+#Runs daily at 2AM UTC.
+#Can also be run manually.
+
+name: GraphQL API Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run build (if available) # linux
+        run: |
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "No build script found, skipping..."
+          fi
+
+      - name: Run lint (if available) # linux
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No linting script found, skipping..."
+          fi
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm test -- --ci --coverage
+        env:
+          CI: true
+          NODE_ENV: test
+
+      - name: Upload coverage (Codecov)
+        uses: codecov/codecov-action@v3
+        if: matrix.node-version == '20.x'
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Archive coverage reports
+        uses: actions/upload-artifact@v4
+        if: matrix.node-version == '20.x'
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 30
+
+  integration-test:
+    runs-on: ubuntu-latest # linux
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run integration tests
+        run: npm test -- --testPathPattern=integration
+        env:
+          CI: true
+          NODE_ENV: test
+      - name: API health check
+        run: curl -f https://graphqlzero.almansi.me/api || exit 1
+      - name: Run smoke test
+        run: |
+          node -e "
+            const { GraphQLClient } = require('graphql-request');
+            const client = new GraphQLClient('https://graphqlzero.almansi.me/api');
+            client.request('query { users(options: { paginate: { limit: 1 } }) { data { id } } }')
+              .then(() => console.log('✅ API is responsive'))
+              .catch(e => { console.error('❌ API connectivity failed:', e.message); process.exit(1); });
+          "
+
+  security-scan: # linux
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run npm audit
+        run: npm audit --audit-level=high || true
+      - name: Scan for secrets
+        run: |
+          echo "Scanning for secrets..."
+          if grep -r "password\|secret\|key\|token" tests/ --exclude-dir=node_modules; then
+            echo "⚠️ Potential sensitive data found"
+          else
+            echo "✅ No sensitive data found"
+          fi
+
+  performance-test: # linux
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run performance benchmark
+        run: |
+          node ./scripts/performance-test.js || true
+
+  notify:
+    runs-on: ubuntu-latest # linux
+    needs: [test, integration-test]
+    if: always()
+    steps:
+      - name: Notify result
+        run: |
+          if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.integration-test.result }}" == "success" ]; then
+            echo "✅ All tests passed!"
+          else
+            echo "❌ Some tests failed. Check logs."
+          fi
