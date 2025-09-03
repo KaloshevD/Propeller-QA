@@ -1,24 +1,32 @@
 name: GraphQL API Tests
 
-#Triggers:
-#Runs on pushes to main & develop.
-#Runs on PRs into main.
-#Runs daily at 2AM UTC.
-#Can also be run manually.
+# Event triggers
+on:
+  # Runs on pushes to main
+  push:
+    branches: [master]
+  
+  # Runs on PRs into main
+  pull_request:
+    branches: [master]
+
+  # Can also be run manually
+  workflow_dispatch:
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-
+          
       - name: Install dependencies
         run: npm install
-
+      
       - name: Run tests
         run: npm test
