@@ -33,6 +33,7 @@ jobs:
       
       - name: Install dependencies
         run: npm install
+        
       
       - name: Check project structure
         run: |
@@ -42,6 +43,9 @@ jobs:
           ls -la tests/ 2>/dev/null || echo "tests/ directory not found"
           echo "Jest config from package.json:"
           cat package.json | grep -A 10 '"jest"'
+      
+      - name: Make Jest executable
+        run: chmod +x ./node_modules/.bin/jest
       
       - name: Run tests
         run: npx jest
