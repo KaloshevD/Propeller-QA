@@ -18,7 +18,7 @@ git init
  git clone https://github.com/KaloshevD/Propeller-QA
  ```
 
-### 5. Clone repository
+### 5. Navigate to your cloned project directory (Change your_user to the user setup on your Windows
 
 ```bash
 cd C:\Users\<YOUR_USER>\Desktop\Propeller_QA
