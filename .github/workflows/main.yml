@@ -9,7 +9,7 @@ on:
   # Runs on PRs into main
   pull_request:
     branches: [master]
-
+  
   # Can also be run manually
   workflow_dispatch:
 
@@ -24,9 +24,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          
+          cache: 'npm'  
+      
+      - name: Verify npm and node versions
+        run: |
+          node --version
+          npm --version
+      
       - name: Install dependencies
         run: npm install
       
+      - name: Check project structure
+        run: |
+          echo "Repository contents:"
+          ls -la
+          echo "Tests directory:"
+          ls -la tests/ 2>/dev/null || echo "tests/ directory not found"
+          echo "Jest config from package.json:"
+          cat package.json | grep -A 10 '"jest"'
+      
       - name: Run tests
+        run: npm run test:ci
+
+      - name: Run tests again
         run: npm test
